@@ -136,7 +136,7 @@ class PyGameWindowView(object):
         # draw joining lines
         pygame.draw.aalines(
             self.screen,
-            (0, 0, 255, 100),
+            (20, 0, 255, 0),
             True,
             centers_list,
             1
