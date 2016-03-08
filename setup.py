@@ -77,7 +77,7 @@ class Body(object):
         # TODO
         self.vel.t = random.uniform(0, 2*math.pi)
         self.acc = Vector(0.0, 0.0)
-        self.animate = False
+        self.animate = True
         self.p_center = Point(*pos)
 
     # ball will move with constant velocity, smoothly varying direction
@@ -244,6 +244,6 @@ if __name__ == '__main__':
 
         model.update()
         view.draw(model)
-        time.sleep(0.1)
+        time.sleep(0.01)
 
     pygame.quit()
