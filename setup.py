@@ -77,7 +77,7 @@ class Body(object):
         # TODO
         self.vel.t = random.uniform(0, 2*math.pi)
         self.acc = Vector(0.0, 0.0)
-        self.animate = True
+        self.animate = False
         self.p_center = Point(*pos)
 
     # ball will move with constant velocity, smoothly varying direction
@@ -87,6 +87,7 @@ class Body(object):
             self.acc.t = (3*self.acc.t + random.uniform(-0.1, 0.1)) / 4
             self.vel.t += self.acc.t
 
+            # TODO Fix!!!
             global screen_size
             screen_width, screen_height = screen_size
             if self.center.x < 0 + self.rad:
@@ -115,35 +116,29 @@ class PyGameWindowView(object):
         # self.model = model
         self.screen = screen
 
-    def draw(self, model, body_img):
+    def draw(self, model):
         # paint background
-        self.screen.fill((200, 200, 200))  # (255, 32, 103))
+        self.screen.fill((20, 20, 20))  # (255, 32, 103))
 
         # draw every body in bodies
         for body in model.bodies:
-            # self.screen.blit(body_img, (body.center.x-16, body.center.y-16))
-
-            gfxdraw.aacircle(
-                self.screen,
-                body.center.x,
-                body.center.y,
-                body.rad,
-                pygame.Color(0, 0, 0)
-            )
+            circle_png = pygame.image.load('circle.png')
+            # circle = pygame.transform.scale(circle_png, (10,10))
+            self.screen.blit(circle_png, 
+                            (body.center.x -5,
+                            body.center.y -6 )
+                            )
 
         centers_list = [body.center.pos() for body in model.bodies]
 
         # draw joining lines
-        pygame.draw.aalines(
+        pygame.gfxdraw.aapolygon(
             self.screen,
-            (20, 0, 255, 0),
-            True,
             centers_list,
-            1
+            (100, 100, 100, 100)
             )
 
         pygame.display.update()
-
 
 
 class PyGameAudio(object):
@@ -183,15 +178,13 @@ class PyGameKeyboardController(object):
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
             for body in model.bodies:
-                body.vel.m = 2.0
-                if random.randint(0, 1):
-                    body.vel.t = math.pi
-                else:
-                    body.vel.t = 0.0
-
-                if self.snap_vertical:
-                    body.vel.t += math.pi/2
-            self.snap_vertical = not self.snap_vertical
+                num = model.bodies.index(body)
+                print "before" , num, body.center.pos() 
+                body.center.x, body.center.y = self.explode(body)
+                print "after" , num, body.center.x , body.center.y 
+                # if self.snap_vertical:
+                #     body.vel.t += math.pi/2
+            # self.snap_vertical = not self.snap_vertical
 
         #  space quits for speed in testing
         elif event.key == K_SPACE:
@@ -205,6 +198,23 @@ class PyGameKeyboardController(object):
         target.vel.m = velocity
         target.acc.t = spin * random.choice((1, -1))
 
+    def explode(self,body, div_dis = 1000):
+        center_screen = Point(250,250) # center of screen (hardcoded for now)
+        x_dist = body.center.x - center_screen.x # current distance of point from center
+        y_dist = body.center.y - center_screen.y 
+        if x_dist == 0:
+            x_dist_m = div_dis
+        else:
+            x_dist_m = div_dis / x_dist # distasnce we move point from its recent location
+        if y_dist == 0:
+            y_dist_m = div_dis
+        else:
+            y_dist_m = div_dis / y_dist
+
+        new_x = x_dist_m + body.center.x
+        new_y = y_dist_m + body.center.y
+
+        return (new_x, new_y)
 
 if __name__ == '__main__':
     try:
@@ -214,12 +224,12 @@ if __name__ == '__main__':
 
     pygame.init()
 
-    body_img = pygame.image.load('circle2.png')
+    # body_img = pygame.image.load('circle2.png')
 
-    screen_size = (375, 467)
+    screen_size = (500, 500)
     background = pygame.display.set_mode(screen_size)
 
-    model = Model(20, 10)
+    model = Model(3, 0)
     audio_unit = PyGameAudio()
     view = PyGameWindowView(model, background)
     controller = PyGameKeyboardController(model, audio_unit)
@@ -233,7 +243,7 @@ if __name__ == '__main__':
             controller.handle_event(event, model)
 
         model.update()
-        view.draw(model, body_img)
-        time.sleep(0.001)
+        view.draw(model)
+        time.sleep(0.1)
 
     pygame.quit()
