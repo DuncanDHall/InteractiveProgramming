@@ -50,38 +50,8 @@ class Model(object):
         # self.body = Body((size[0]/2, size[1]/2), 50)
 
     def update(self):
-    	global frame_rate
         for body in self.bodies:
-            body.update(flag)
-            if flag == 0: # a flag that identifies the B-key motion
-            	pass
-            elif flag == frame_rate:
-            	pass 
-            else: 
-            	flag += 1
-            	def explode(self,body):
-            		""" Take current pos tuple,
-            			create list of tuples of len(frame_rate)
-            			to determine the explosion motion
-            			where final pos is the initial pos tuple
-            		"""
-				    # center_screen = Point(250,250) # center of screen (hardcoded for now)
-				    # x_dist = body.center.x - center_screen.x # current x distance of point from center
-				    # y_dist = body.center.y - center_screen.y # current x distance of point from center
-				    # if x_dist == 0:
-				    #     x_dist_m = div_dis
-				    # else:
-				    #     x_dist_m = div_dis / x_dist # distance we move point from its recent location
-				    # if y_dist == 0:
-				    #     y_dist_m = div_dis
-				    # else:
-				    #     y_dist_m = div_dis / y_dist
-
-				    # new_x = x_dist_m + body.center.x
-				    # new_y = y_dist_m + body.center.y
-
-				    # return (new_x, new_y)
-
+            body.update()
 
     def too_close(self, new_point, points, distance):
         '''checks to see if the new_point is too close to any points in points
@@ -109,11 +79,12 @@ class Body(object):
         self.acc = Vector(0.0, 0.0)
         self.animate = False
         self.p_center = Point(*pos)
-        self.flag = 0
+        self.next_positions = []
+        self.flag = -1
 
     # ball will move with constant velocity, smoothly varying direction
     def update(self):
-        if self.animate:
+        if self.animate and self.flag == -1:
 
             self.acc.t = (3*self.acc.t + random.uniform(-0.1, 0.1)) / 4
             self.vel.t += self.acc.t
@@ -140,6 +111,14 @@ class Body(object):
             self.center.y = int(round(self.p_center.y))
 
             self.vel.m = (7*self.vel.m + self.vel.base_vel)/8
+        elif self.flag == frame_rate:
+            self.flag = -1
+        else:
+            pass
+            # self.p_next_pos = self.next_positions[self.flag] # returns a tuple of two floats
+            # self.center.x = int(round(self.p_next_pos[0]))
+            # self.center.y = int(round(self.p_next_pos[1]))
+            # self.flag += 1
 
 
 class PyGameWindowView(object):
@@ -210,8 +189,8 @@ class PyGameKeyboardController(object):
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
             for body in model.bodies:
-            	body.flag = 1
-
+            	body.flag = 0
+                body.next_positions = self.get_pos_list(body) # pulls the list of coming postition for a node
         #  space quits for speed in testing
         elif event.key == K_SPACE:
             global running
@@ -219,10 +198,34 @@ class PyGameKeyboardController(object):
         else:
             return
 
+	def get_pos_list(self, body):
+		""" Calculates a list of future positions for a node
+			given the event that B-key is pressed
+        """ 
+        global frame_rate
+        pos_list = [] # empty list for all our postition for a node 
+        center_screen = Point(250,250) #just using center of screen for now, avg center next
+        body.vel.t = math.atan((center_screen.x - body.center.x)/(center_screen.y - body.center.y))
+        frame_list = range(1,frame_rate) # will be populated with our pos val for B-key event
+        now_pos = body.center.pos() # pull the immediate location of the current node
+        for frame in frame_list: 
+            dist = self.pos_curve(frame,frame_rate) # get dist of movement for origial pos 
+            dy = dist * math.sin(body.vel.t) # change in y pos
+            dx = dist * math.cos(body.vel.t) # change in x pos 
+            pos_list.append(tuple(map(sum, zip(now_pos, (dx, dy)))))
+        return pos_list
+
+    def pos_curve(self, frame, frame_rate):
+        dec = 0.137129
+        frame_div = float(frame) / frame_rate
+        dist = ( (math.log10(frame_div + dec) + 1) / (frame_div + dec) ) - 1
+        return dist
+
     def speed_random(self, model, velocity=20.0, spin=1.0):
         target = random.choice(model.bodies)
         target.vel.m = velocity
         target.acc.t = spin * random.choice((1, -1))
+
 
 if __name__ == '__main__':
     try:
