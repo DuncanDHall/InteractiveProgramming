@@ -50,8 +50,38 @@ class Model(object):
         # self.body = Body((size[0]/2, size[1]/2), 50)
 
     def update(self):
+    	global frame_rate
         for body in self.bodies:
-            body.update()
+            body.update(flag)
+            if flag == 0: # a flag that identifies the B-key motion
+            	pass
+            elif flag == frame_rate:
+            	pass 
+            else: 
+            	flag += 1
+            	def explode(self,body):
+            		""" Take current pos tuple,
+            			create list of tuples of len(frame_rate)
+            			to determine the explosion motion
+            			where final pos is the initial pos tuple
+            		"""
+				    # center_screen = Point(250,250) # center of screen (hardcoded for now)
+				    # x_dist = body.center.x - center_screen.x # current x distance of point from center
+				    # y_dist = body.center.y - center_screen.y # current x distance of point from center
+				    # if x_dist == 0:
+				    #     x_dist_m = div_dis
+				    # else:
+				    #     x_dist_m = div_dis / x_dist # distance we move point from its recent location
+				    # if y_dist == 0:
+				    #     y_dist_m = div_dis
+				    # else:
+				    #     y_dist_m = div_dis / y_dist
+
+				    # new_x = x_dist_m + body.center.x
+				    # new_y = y_dist_m + body.center.y
+
+				    # return (new_x, new_y)
+
 
     def too_close(self, new_point, points, distance):
         '''checks to see if the new_point is too close to any points in points
@@ -77,8 +107,9 @@ class Body(object):
         # TODO
         self.vel.t = random.uniform(0, 2*math.pi)
         self.acc = Vector(0.0, 0.0)
-        self.animate = True
+        self.animate = False
         self.p_center = Point(*pos)
+        self.flag = 0
 
     # ball will move with constant velocity, smoothly varying direction
     def update(self):
@@ -132,11 +163,12 @@ class PyGameWindowView(object):
         centers_list = [body.center.pos() for body in model.bodies]
 
         # draw joining lines
-        pygame.gfxdraw.aapolygon(
-            self.screen,
-            centers_list,
-            (100, 100, 100, 100)
-            )
+        if len(model.bodies) > 1:
+	        pygame.gfxdraw.aapolygon(
+	            self.screen,
+	            centers_list,
+	            (100, 100, 100, 100)
+	            )
 
         pygame.display.update()
 
@@ -178,13 +210,7 @@ class PyGameKeyboardController(object):
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
             for body in model.bodies:
-                num = model.bodies.index(body)
-                print "before" , num, body.center.pos() 
-                body.center.x, body.center.y = self.explode(body)
-                print "after" , num, body.center.x , body.center.y 
-                # if self.snap_vertical:
-                #     body.vel.t += math.pi/2
-            # self.snap_vertical = not self.snap_vertical
+            	body.flag = 1
 
         #  space quits for speed in testing
         elif event.key == K_SPACE:
@@ -198,24 +224,6 @@ class PyGameKeyboardController(object):
         target.vel.m = velocity
         target.acc.t = spin * random.choice((1, -1))
 
-    def explode(self,body, div_dis = 1000):
-        center_screen = Point(250,250) # center of screen (hardcoded for now)
-        x_dist = body.center.x - center_screen.x # current distance of point from center
-        y_dist = body.center.y - center_screen.y 
-        if x_dist == 0:
-            x_dist_m = div_dis
-        else:
-            x_dist_m = div_dis / x_dist # distasnce we move point from its recent location
-        if y_dist == 0:
-            y_dist_m = div_dis
-        else:
-            y_dist_m = div_dis / y_dist
-
-        new_x = x_dist_m + body.center.x
-        new_y = y_dist_m + body.center.y
-
-        return (new_x, new_y)
-
 if __name__ == '__main__':
     try:
         pygame.quit()
@@ -223,13 +231,11 @@ if __name__ == '__main__':
         pass
 
     pygame.init()
-
-    # body_img = pygame.image.load('circle2.png')
-
+    frame_rate = 10
     screen_size = (500, 500)
     background = pygame.display.set_mode(screen_size)
 
-    model = Model(3, 0)
+    model = Model(1, 0)
     audio_unit = PyGameAudio()
     view = PyGameWindowView(model, background)
     controller = PyGameKeyboardController(model, audio_unit)
@@ -244,6 +250,6 @@ if __name__ == '__main__':
 
         model.update()
         view.draw(model)
-        time.sleep(0.01)
+        time.sleep(1/frame_rate)
 
     pygame.quit()
