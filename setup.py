@@ -77,13 +77,16 @@ class Body(object):
         # TODO
         self.vel.t = random.uniform(0, 2*math.pi)
         self.acc = Vector(0.0, 0.0)
-        self.animate = False
+        self.animate = True
         self.p_center = Point(*pos)
         self.next_positions = []
         self.flag = -1
 
     # ball will move with constant velocity, smoothly varying direction
     def update(self):
+        # if self.flag != -1:
+        #     import pdb; pdb.set_trace()
+
         if self.animate and self.flag == -1:
 
             self.acc.t = (3*self.acc.t + random.uniform(-0.1, 0.1)) / 4
@@ -107,18 +110,24 @@ class Body(object):
 
             self.p_center.x += self.vel.m * math.cos(self.vel.t)
             self.p_center.y += self.vel.m * math.sin(self.vel.t)
-            self.center.x = int(round(self.p_center.x))
-            self.center.y = int(round(self.p_center.y))
 
             self.vel.m = (7*self.vel.m + self.vel.base_vel)/8
-        elif self.flag == frame_rate:
+        elif self.flag == -1:
+            pass
+        elif self.flag >= frame_rate -1:
             self.flag = -1
         else:
-            pass
-            # self.p_next_pos = self.next_positions[self.flag] # returns a tuple of two floats
-            # self.center.x = int(round(self.p_next_pos[0]))
-            # self.center.y = int(round(self.p_next_pos[1]))
-            # self.flag += 1
+            # import pdb; pdb.set_trace()
+            self.p_center.x, self.p_center.y = self.next_positions[self.flag]
+            self.flag += 1
+
+        self.center.x = int(round(self.p_center.x))
+        self.center.y = int(round(self.p_center.y))
+
+        # self.p_next_pos = self.next_positions[self.flag] # returns a tuple of two floats
+        # self.center.x = int(round(self.p_next_pos[0]))
+        # self.center.y = int(round(self.p_next_pos[1]))
+        # self.flag += 1
 
 
 class PyGameWindowView(object):
@@ -128,7 +137,7 @@ class PyGameWindowView(object):
 
     def draw(self, model):
         # paint background
-        self.screen.fill((20, 20, 20))  # (255, 32, 103))
+        self.screen.fill((200, 200, 200))  # (255, 32, 103))
 
         # draw every body in bodies
         for body in model.bodies:
@@ -188,9 +197,11 @@ class PyGameKeyboardController(object):
             self.speed_random(model)
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
+            # import pdb; pdb.set_trace()
             for body in model.bodies:
             	body.flag = 0
                 body.next_positions = self.get_pos_list(body) # pulls the list of coming postition for a node
+                
         #  space quits for speed in testing
         elif event.key == K_SPACE:
             global running
@@ -198,14 +209,14 @@ class PyGameKeyboardController(object):
         else:
             return
 
-	def get_pos_list(self, body):
-		""" Calculates a list of future positions for a node
-			given the event that B-key is pressed
+    def get_pos_list(self, body):
+        """ Calculates a list of future positions for a node
+            given the event that B-key is pressed
         """ 
         global frame_rate
         pos_list = [] # empty list for all our postition for a node 
         center_screen = Point(250,250) #just using center of screen for now, avg center next
-        body.vel.t = math.atan((center_screen.x - body.center.x)/(center_screen.y - body.center.y))
+        body.vel.t = math.atan((body.center.x - center_screen.x)/(body.center.y - center_screen.y))
         frame_list = range(1,frame_rate) # will be populated with our pos val for B-key event
         now_pos = body.center.pos() # pull the immediate location of the current node
         for frame in frame_list: 
@@ -217,8 +228,8 @@ class PyGameKeyboardController(object):
 
     def pos_curve(self, frame, frame_rate):
         dec = 0.137129
-        frame_div = float(frame) / frame_rate
-        dist = ( (math.log10(frame_div + dec) + 1) / (frame_div + dec) ) - 1
+        frame_div = float(frame) / (frame_rate*5)
+        dist = ( (math.log10(5*(frame_div + dec)) + 1) / (5*(frame_div + dec)) - 1 ) * 500
         return dist
 
     def speed_random(self, model, velocity=20.0, spin=1.0):
