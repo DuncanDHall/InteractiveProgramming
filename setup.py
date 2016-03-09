@@ -34,20 +34,20 @@ class Model(object):
         global screen_size
         screen_width, screen_height = screen_size
 
-        self.body_centers = [
-            Point(125, 125),
-            Point(375, 125),
-            Point(125, 375),
-            Point(375, 375)]
+        # self.body_centers = [
+        #     Point(125, 125),
+        #     Point(375, 125),
+        #     Point(125, 375),
+        #     Point(375, 375)]
 
         # creates list of center points for every body 
-        # while len(self.body_centers) < num_bodies:
-        #     x = random.randint(0+body_rad, screen_width-body_rad)
-        #     y = random.randint(0+body_rad, screen_height-body_rad)
-        #     print x, y
-        #     new_center = Point(x, y)
-        #     if not self.too_close(new_center, self.body_centers, 2*body_rad):
-        #         self.body_centers.append(new_center)
+        while len(self.body_centers) < num_bodies:
+            x = random.randint(0+body_rad, screen_width-body_rad)
+            y = random.randint(0+body_rad, screen_height-body_rad)
+            print x, y
+            new_center = Point(x, y)
+            if not self.too_close(new_center, self.body_centers, 2*body_rad):
+                self.body_centers.append(new_center)
 
         # creates bodies at each center 
         for center in self.body_centers:
@@ -86,7 +86,7 @@ class Body(object):
         self.vel.base_vel = vel[0]
         self.vel.t = random.uniform(0, 2*math.pi)
         self.acc = Vector(0.0, 0.0)
-        self.animate = False
+        self.animate = True
         self.p_center = Point(*pos)
         self.next_positions = []
         self.flag = -1
@@ -142,6 +142,22 @@ class Body(object):
             # import pdb; pdb.set_trace()
             self.p_center.x, self.p_center.y = self.next_positions[self.flag]
             self.flag += 1
+
+            global screen_size
+            screen_width, screen_height = screen_size
+
+            if self.p_center.x < -10 + self.rad:
+                self.vel.t = math.pi - self.vel.t
+                self.p_center.x = float(-10 + self.rad)
+            elif self.p_center.x > screen_width - self.rad:
+                self.vel.t = math.pi - self.vel.t
+                self.p_center.x = float(10 + screen_width - self.rad)
+            if self.p_center.y < -10 + self.rad:
+                self.vel.t = 0 - self.vel.t
+                self.p_center.y = float(-10 + self.rad)
+            elif self.p_center.y > screen_height - self.rad:
+                self.vel.t = 0 - self.vel.t
+                self.p_center.y = float(10 + screen_height - self.rad)
 
         # finally round and set center coords
         self.center.x = int(round(self.p_center.x))
@@ -229,12 +245,18 @@ class PyGameKeyboardController(object):
             self.speed_random(model)
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
-            # import pdb; pdb.set_trace()
+            # # import pdb; pdb.set_trace()
+            # x = sum([body.center.x for body in self.model.bodies])/len(self.model.bodies)
+            # y = sum([body.center.y for body in self.model.bodies])/len(self.model.bodies)
+            x = 250 
+            y = 250 
+
+            center_mass = Point(x,y) 
             for body in model.bodies:
             	body.flag = 0
                 # print body.vel.t, 'init theta'
                 # print body.center.pos(), 'init pos'
-                body.next_positions = self.get_pos_list(body) # pulls the list of coming postition for a node
+                body.next_positions = self.get_pos_list(body, center_mass) # pulls the list of coming postition for a node
                 # print body.next_positions
                 
         #  space quits for speed in testing
@@ -244,42 +266,44 @@ class PyGameKeyboardController(object):
         else:
             return
 
-    def get_pos_list(self, body):
+    def get_pos_list(self, body, center_mass):
         """ Calculates a list of future positions for a node
             given the event that B-key is pressed
         """ 
 
-        global frame_rate
-        pos_list = [] # empty list for all our postition for a node 
-        # TODO move somewhere better
-        print body.center.pos()
-
-        avg = [0, 0]
-        for body in self.model.bodies:
-            avg[0] = avg[0] + body.center.x
-            avg[1] = avg[1] + body.center.y
-
-        avg = [avg[0]/len(self.model.bodies), avg[1]/len(self.model.bodies)]
-        print avg
-        print body.center.x, body.center.y
-
-        x = sum([body.center.x for body in self.model.bodies])/len(self.model.bodies)
-        y = sum([body.center.y for body in self.model.bodies])/len(self.model.bodies)
+        # # TODO move somewhere better
         # print body.center.pos()
 
-        center_mass = Point(x,y) 
+        # avg = [0, 0]
+        # for body in self.model.bodies:
+        #     avg[0] = avg[0] + body.center.x
+        #     avg[1] = avg[1] + body.center.y
+
+        # avg = [avg[0]/len(self.model.bodies), avg[1]/len(self.model.bodies)]
+        # print avg
+        # print body.center.x, body.center.y
+
+        # x = sum([body.center.x for body in self.model.bodies])/len(self.model.bodies)
+        # y = sum([body.center.y for body in self.model.bodies])/len(self.model.bodies)
+        # # print body.center.pos()
+
+        # center_mass = Point(x,y) 
 
         # if body.center.x < center_mass.x:
         #     marker = -1
         # else:
         #     marker = 1
 
+        pos_list = [] # empty list for all our postition for a node 
+
         # TODO check signs
-        theta = math.atan(float(center_mass.y - body.center.y)/(body.center.x - center_mass.x))
+        # theta = math.atan(float(center_mass.y - body.center.y)/(body.center.x - center_mass.x))
+        theta = random.uniform(0, 2*math.pi)
         if body.center.x < center_mass.x:
             theta += math.pi / 2
         print theta, body.center.pos()
 
+        global frame_rate
         frame_list = range(0,frame_rate) # will be populated with our pos val for B-key event
         now_pos = body.center.pos() # pull the immediate location of the current node
         for frame in frame_list: 
@@ -314,11 +338,11 @@ if __name__ == '__main__':
         pass
 
     pygame.init()
-    frame_rate = 10
+    frame_rate = 100
     screen_size = (500, 500)
     background = pygame.display.set_mode(screen_size)
 
-    model = Model(1, 0)
+    model = Model(10, 0)
     audio_unit = PyGameAudio()
     view = PyGameWindowView(background)
     controller = PyGameKeyboardController(model, audio_unit)
