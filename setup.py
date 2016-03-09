@@ -290,6 +290,14 @@ class PyGameKeyboardController(object):
             self.speed_random(model)
         elif event.key == pygame.K_b:
             audio_unit.play_sample_num(3)
+        elif event.key == pygame.K_f:
+            audio_unit.play_sample_num(4)
+        elif event.key == pygame.K_l:
+            audio_unit.play_sample_num(5)
+        elif event.key == pygame.K_k:
+            audio_unit.play_sample_num(6)
+        elif event.key == pygame.K_j:
+            audio_unit.play_sample_num(7)
             # # import pdb; pdb.set_trace()
             # x = sum([body.center.x for body in self.model.bodies])/len(self.model.bodies)
             # y = sum([body.center.y for body in self.model.bodies])/len(self.model.bodies)
