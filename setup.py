@@ -6,6 +6,11 @@ import glob
 import math
 from pygame import gfxdraw
 
+### FUTURE IMPLMENTATION:  Instead of trying to move bodies proportionally to each other and the center
+### what if instead we captured the 'image' of the updated screen the moment the B-key is pressed. Then we could
+### work with transformning the 'image' in relation to the coordinate system instead of the objects in 
+### relation to each other (which we are doing currently) Hopefully that would help us get over some of our
+### funky body math and get a smoother motion for the B-key event node expansion
 
 class Point(object): 
     """ creating point class, to determine location of all our stuff 
@@ -64,16 +69,16 @@ class Body(object):
             global screen_size
             screen_width, screen_height = screen_size
 
-            if self.center.x < 0 + self.rad:
+            if self.center.x < 0 + self.rad: # Left side
                 self.vel.t = math.pi - self.vel.t
                 self.p_center.x = float(0 + self.rad)
-            elif self.center.x > screen_width - self.rad:
+            elif self.center.x > screen_width - self.rad: # Right side
                 self.vel.t = math.pi - self.vel.t
                 self.p_center.x = float(screen_width - self.rad)
-            if self.center.y < 0 + self.rad:
+            if self.center.y < 0 + self.rad: # Top
                 self.vel.t = 0 - self.vel.t
                 self.p_center.y = float(0 + self.rad)
-            elif self.center.y > screen_height - self.rad:
+            elif self.center.y > screen_height - self.rad: # Bottom
                 self.vel.t = 0 - self.vel.t
                 self.p_center.y = float(screen_height - self.rad)
 
@@ -123,7 +128,8 @@ class Body(object):
 
 class Ripple(object):
     """ripple object which emits from bodies on key press"""
-    def __init__(self, pos, rad=0, alpha=100, max_r=200):
+    def __init__(self, pos, target, rad=0, alpha=100, max_r=200):
+        self.target = target
         self.x, self.y = pos
         self.rad = rad
         self.alpha = alpha
@@ -138,7 +144,7 @@ class Ripple(object):
         self.alpha = self.alpha/1.1 - 1
         if self.alpha <= 0:
             model.ripples.remove(self)
-
+        self.x, self.y = self.target.center.pos()
 
 class Model(object):
     """ our Model class generates and edits body attributes, bodies are defined by points
@@ -146,6 +152,7 @@ class Model(object):
 
     # inits a custom number of bodies at semi-random positions inside screen
     def __init__(self, num_bodies=3, body_rad=10):
+        self.ripples = [] 
         self.bodies = []
         self.body_centers = []
         global screen_size
@@ -168,9 +175,6 @@ class Model(object):
         # creates bodies at each center 
         for center in self.body_centers:
             self.bodies.append(Body(center.pos(), body_rad))
-
-        # TODO actual implementation of ripples
-        self.ripples = [Ripple((250, 250))]
 
     def update(self):
         """ Updates all object to prep for draw
@@ -251,7 +255,7 @@ class PyGameAudio(object):
     """ 
     def __init__(self):
         # get paths for all .wavs in sounds flolder
-        self.sound_paths = glob.glob('sounds/*.wav')
+        self.sound_paths = glob.glob('sounding/*.wav')
         print self.sound_paths  # SUB
 
     def play_sample_num(self, index):
@@ -339,13 +343,13 @@ class PyGameKeyboardController(object):
         dist = ( (math.log10((frame_div + dec)) + 1) / ((frame_div + dec)) - 1 ) * 500
         return dist
 
-    def speed_random(self, model, velocity=20.0, spin=1.0):
+    def speed_random(self, model, velocity=10.0, spin=1.0):
         """ chooses a random body and gives it a particular speed
         """ 
         target = random.choice(model.bodies)
         target.vel.m = velocity
         target.acc.t = spin * random.choice((1, -1))
-        model.ripples.append(Ripple(target.center.pos()))
+        model.ripples.append(Ripple(target.center.pos(),target))
 
 
 if __name__ == '__main__':
@@ -360,7 +364,7 @@ if __name__ == '__main__':
     screen_size = (500, 500)
     background = pygame.display.set_mode(screen_size)
 
-    model = Model(10, 0)
+    model = Model(10, 5)
     audio_unit = PyGameAudio()
     view = PyGameWindowView(background)
     controller = PyGameKeyboardController(model, audio_unit)
