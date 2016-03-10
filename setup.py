@@ -6,6 +6,7 @@ import glob
 import math
 from pygame import gfxdraw
 
+
 ### FUTURE IMPLMENTATION:  Instead of trying to move bodies proportionally to each other and the center
 ### what if instead we captured the 'image' of the updated screen the moment the B-key is pressed. Then we could
 ### work with transformning the 'image' in relation to the coordinate system instead of the objects in 
@@ -296,21 +297,20 @@ class PyGameKeyboardController(object):
             audio_unit.play_sample_num(5)
         elif event.key == pygame.K_k:
             audio_unit.play_sample_num(6)
-        elif event.key == pygame.K_j:
-            audio_unit.play_sample_num(7)
-            # # import pdb; pdb.set_trace()
-            # x = sum([body.center.x for body in self.model.bodies])/len(self.model.bodies)
-            # y = sum([body.center.y for body in self.model.bodies])/len(self.model.bodies)
             x = 250 
             y = 250 
-
+            center_mass = Point(x,y) 
+            for body in model.bodies:
+                body.flag = 0
+                body.next_positions = self.get_pos_list(body, center_mass) # pulls the list of coming postition for a node    
+        elif event.key == pygame.K_j:
+            audio_unit.play_sample_num(7)
+            x = 250 
+            y = 250 
             center_mass = Point(x,y) 
             for body in model.bodies:
             	body.flag = 0
-                # print body.vel.t, 'init theta'
-                # print body.center.pos(), 'init pos'
                 body.next_positions = self.get_pos_list(body, center_mass) # pulls the list of coming postition for a node
-                # print body.next_positions
                 
         #  space quits for speed in testing
         elif event.key == K_SPACE:
@@ -372,10 +372,21 @@ if __name__ == '__main__':
     screen_size = (500, 500)
     background = pygame.display.set_mode(screen_size)
 
-    model = Model(10, 5)
+    # loop = audio_unit.play_sample_num(9)
+    # loop.play(-1)
+
+    pygame.mixer.init(44100, -16, 2, 2048)
+
+    # pygame.mixer.music.load("minor_mood.wav") 
+    pygame.mixer.music.load("melancholy.wav") 
+    pygame.mixer.music.set_volume(0.5)
+    pygame.mixer.music.play(-1, 0.0)
+  
+    model = Model(25, 5)
     audio_unit = PyGameAudio()
     view = PyGameWindowView(background)
     controller = PyGameKeyboardController(model, audio_unit)
+
 
     running = True
 
